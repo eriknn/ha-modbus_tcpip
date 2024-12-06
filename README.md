@@ -7,7 +7,7 @@ Download using HACS or manually put it in the custom_components folder.
 ## Purpose of integration
 
 This integration supports dynamically loading device drivers, meaning that you just need to add one file to support a new modbus device.
-This file will contain everything modbus related (addresses, scaling etc), and also information related to Home Assistant entities - that is
+This file will contain everything modbus related (addresses, scaling etc), and also information related to Home Assistant entities - that is, 
 what type of entity it is, units etc.
 
 ## Usage
