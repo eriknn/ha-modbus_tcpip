@@ -1,32 +1,32 @@
-# Home assistant Custom component for Pax Calima
+# Home assistant Custom component for Modbus TCP/IP
 
 ## Installation
 
 Download using HACS or manually put it in the custom_components folder.
 
-## Add device
+## Purpose of integration
 
-The integration supports discovery of devices, so any fans should be automatically discovered.
-If not you may try to add it manually through the integration configuration.
+This integration supports dynamically loading device drivers, meaning that you just need to add one file to support a new modbus device.
+This file will contain everything modbus related (addresses, scaling etc), and also information related to Home Assistant entities - that is
+what type of entity it is, units etc.
 
-## Sensor data
+## Usage
 
-The sensors for temp/humidity/light seem to be a bit inaccurate, or I'm not converting them correctly, so don't expect them to be as accurate as from other dedicated sensors.
-The humidity sensor will show 0 when humidity is low!
-Airflow is just a conversion of the fan speed based on a linear correlation between those two. This is a bit inaccurate at best, as the true flow will vary greatly depending on how your fan is mounted.
+Create a new device file (devices/manufacturer/devicemodel.py). This file needs to define the following:
+* A "Device" class subclassing ModbusDevice:
+* Group enums
+* Datapoints for each of the previously defined groups
 
+The class will have access to the callbacks:
+* onBeforeRead - Called before the groups are polled
+* onAfterRead - Called after the groups are polled. Use this if you need to do some calculations / special conversion etc.
 
-## Good to know
+## Supported Home Assistant entities
 
-Speed and duration for boostmode are local variables in home assistant, and as such will not influence boostmode from the app. These variables will also be reset to default if you re-add a device.
+* Sensor
+* Switch
+* Number
+* BinarySensor
+* Select
 
-Configuration parameters are read only on Home Assistant startup, and subsequently once every day, to get any changes made from elsewhere.
-
-Fast scan interval refers to the interval after a write has been made. This allows for quick feedback when the fan is controlled and does not disconnect between reads. This fast interval will remain for 10 reads.
-
-Setting speed to less than 800 RPM might stall the fan, depending on the specific application. I don't know if stalling like this could damage the fan/motor, so do this with care.
-
-## Thanks
-
-- [@PatrickE94](https://github.com/PatrickE94/pycalima) for the Calima driver
-- [@MarkoMarjamaa](https://github.com/MarkoMarjamaa/homeassistant-paxcalima) for a good starting point for the HA-implementation
+It's easy too add support for more, so let me know if anything's needed.
