@@ -1,0 +1,44 @@
+{    
+	"title": "Modbus TCP/IP",
+    "config": {         
+        "step": {                    
+            "user": { 
+				"title": "Modbus TCP/IP Innstillinger",
+                "description": "Legg inn detaljer",
+                "data": {                     
+                    "name": "Navn", 
+                    "device_model": "Modell",                    
+                    "ip_address": "IP-adresse",   
+					"port": "Port",
+					"slave_id": "Slave ID",
+                    "scan_interval": "Pollinterval i sekunder",
+                    "scan_interval_fast": "Hurtig pollinterval i sekunder"  	
+                }        
+            }
+        },
+		"abort": {
+			"already_configured": "Integrasjonen finnes allerede"
+		}		
+    },   
+    "options": {         
+        "step": {
+            "init": {
+				"title": "Modbus TCP/IP Innstillinger",
+                "description": "Legg inn detaljer",
+                "data": {                     
+                    "name": "Navn",  
+                    "device_model": "Modell",                      
+                    "ip_address": "IP-adresse",
+					"port": "Port",
+					"slave_id": "Slave ID",    
+                    "scan_interval": "Pollinterval i sekunder",
+                    "scan_interval_fast": "Hurtig pollinterval i sekunder" 
+                } 
+            }
+        },
+		"abort": {
+            "add_success": "Enhet {dev_name} ble lagt til",
+			"already_configured": "Enhet {dev_name} er allerede konfigurert"
+		}
+    }
+}

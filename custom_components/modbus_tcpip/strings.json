@@ -1,0 +1,44 @@
+{    
+	"title": "Modbus TCP/IP",
+    "config": {         
+        "step": {                    
+            "user": { 
+				"title": "Modbus TCP/IP Settings",
+                "description": "Enter your details",
+                "data": {                     
+                    "name": "Name", 
+                    "device_model": "Device Model",                   
+                    "ip_address": "IP Address",
+					"port": "Port",
+					"slave_id": "Slave ID",
+					"scan_interval": "Scan Interval in seconds",
+                    "scan_interval_fast": "Fast Scan Interval in seconds"  	
+                }        
+            }
+        },
+		"abort": {
+			"already_configured": "Integration already exists"
+		}		
+    },   
+    "options": {         
+        "step": {
+            "init": {
+				"title": "Modbus TCP/IP Settings",
+                "description": "Enter your details",
+                "data": {                     
+                    "name": "Name", 
+                    "device_model": "Device Model",                    
+                    "ip_address": "IP Address",
+					"port": "Port",
+					"slave_id": "Slave ID",
+					"scan_interval": "Scan Interval in seconds",
+                    "scan_interval_fast": "Fast Scan Interval in seconds"  	
+                }
+            }
+        },
+		"abort": {
+            "add_success": "Device {dev_name} successfully added",
+			"already_configured": "Device {dev_name} is already configured"
+		}
+    }
+}
