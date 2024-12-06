@@ -21,6 +21,8 @@ The class will have access to the callbacks:
 * onBeforeRead - Called before the groups are polled
 * onAfterRead - Called after the groups are polled. Use this if you need to do some calculations / special conversion etc.
 
+Take a look at an existing device file as an example
+
 ## Supported Home Assistant entities
 
 * Sensor
