@@ -34,6 +34,10 @@ class ModbusBinarySensorData(ModbusData):
 class ModbusSwitchData(ModbusData):
     pass
 
+@dataclass
+class ModbusButtonData(ModbusData):
+    pass
+
 ################################################
 ###### DATA TYPES FOR MODBUS FUNCTIONALITY ######
 ################################################
@@ -65,7 +69,8 @@ class ModbusDefaultGroups(Enum):
 
 @dataclass
 class ModbusDatapoint:
-    Address: int                                        # 0-indexed address
-    Scaling: float = 1                                  # Multiplier for raw value
+    Address: int  = 0                                   # 0-indexed address
+    Length: int = 1                                     # Number of registers
+    Scaling: float = 1                                  # Multiplier for raw value      
     Value: float = 0                                    # Scaled value
     DataType: ModbusData = None                         # Entitiy parameters

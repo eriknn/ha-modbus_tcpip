@@ -13,32 +13,38 @@ from .datatypes import ModbusSelectData, ModbusNumberData
 
 _LOGGER = logging.getLogger(__name__)
 
-class ModbusDevice():
+class InitHelper(type):
+    def __call__(cls, *args, **kwargs):
+        instance = super().__call__(*args, **kwargs)
+        instance.post_init()
+        return instance
+
+class ModbusDevice(metaclass=InitHelper):
     def __init__(self, host:str, port:int, slave_id:int):
         self._client = ModbusTcpClient(host, port)
         self._slave_id = slave_id
         
         # Default properties
-        self.manufacturer=None
-        self.model=None
-        self.sw_version=None
+        self.manufacturer = None
+        self.model = None
+        self.sw_version = None
+        self.serial_number = None
 
         # Initialize empty datapoints
         self.Datapoints: Dict[ModbusGroup, Dict[str, ModbusDatapoint]] = {}
 
-        # Add default datapoints
+        # Add default data groups
         self.Datapoints[ModbusDefaultGroups.CONFIG] = { }
-        self.Datapoints[ModbusDefaultGroups.UI] = {
-            "Config Selection": ModbusDatapoint(Address=0, DataType=ModbusSelectData(category=EntityCategory.CONFIG)),
-            "Config Value": ModbusDatapoint(Address=0, DataType=ModbusNumberData(category=EntityCategory.CONFIG, min_value=0, max_value=65535, step=1))
-        }
-
-    def twos_complement(self, number) -> int:
-        if number >> 15:
-            return -((number^0xFFFF) + 1)
-        else:
-            return number
+        self.Datapoints[ModbusDefaultGroups.UI] = { }
     
+    def post_init(self):
+        # Add Config UI if we have config values
+        if len(self.Datapoints[ModbusDefaultGroups.CONFIG]) > 0:
+            self.Datapoints[ModbusDefaultGroups.UI] = {
+                "Config Selection": ModbusDatapoint(DataType=ModbusSelectData(category=EntityCategory.CONFIG)),
+                "Config Value": ModbusDatapoint(DataType=ModbusNumberData(category=EntityCategory.CONFIG, min_value=0, max_value=65535, step=1))
+            }
+
     """ ******************************************************* """
     """ ************* FUNCTIONS CALLED ON EVENTS ************** """
     """ ******************************************************* """
@@ -54,73 +60,147 @@ class ModbusDevice():
         await self.onBeforeRead()
 
         for group, datapoints in self.Datapoints.items():
-            _LOGGER.debug("Checking group %s", group)
             if group.poll_mode == ModbusPollMode.POLL_ON:
-                _LOGGER.debug("Reading group %s", group)
                 await self.readGroup(group)
-                _LOGGER.debug("Read group %s", group)
         
         await self.onAfterRead()
 
     """ ******************************************************* """
     """ ******************** READ GROUP *********************** """
     """ ******************************************************* """
-    async def readGroup(self, group:ModbusGroup):
-        # We read multiple registers in one message
-        _LOGGER.debug("Reading group: %s", group)
-        n_reg = len(self.Datapoints[group])
+    async def readGroup(self, group: ModbusGroup):
+        """Read Modbus group registers and update data points."""
+
+        # Calculate the total number of registers to read
+        n_reg = sum(point.Length for point in self.Datapoints[group].values())
+        if n_reg == 0:
+            _LOGGER.warning("No data points to read in group: %s", self.Datapoints[group])
+            return
+
         first_key = next(iter(self.Datapoints[group]))
         first_address = self.Datapoints[group][first_key].Address
-   
-        if group.mode  == ModbusMode.INPUT:
-            response = self._client.read_input_registers(first_address,n_reg,self._slave_id)
-        elif group.mode  == ModbusMode.HOLDING:
-            response = self._client.read_holding_registers(first_address,n_reg,self._slave_id)
-            
-        if response.isError():
-            _LOGGER.debug("Error: %s", response)
-            raise ModbusException('{}'.format(response))
+
+        # Read the appropriate type of registers
+        if group.mode == ModbusMode.INPUT:
+            response = self._client.read_input_registers(first_address, n_reg, self._slave_id)
+        elif group.mode == ModbusMode.HOLDING:
+            response = self._client.read_holding_registers(first_address, n_reg, self._slave_id)
         else:
-            _LOGGER.debug("Read group success")
-            for (dataPointName, data), newVal in zip(self.Datapoints[group].items(), response.registers):
-                newVal_2 = self.twos_complement(newVal)
-                
-                if data.Scaling == 1.0:
-                    data.Value = newVal_2
-                else:
-                    data.Value = newVal_2 * data.Scaling
-                _LOGGER.debug("Key: %s Value: %s", dataPointName, data.Value)
-                
+            raise ValueError(f"Unsupported Modbus mode: {group.mode}")
+
+        # Handle Modbus errors
+        if response.isError():
+            _LOGGER.error("Error reading group %s: %s", group, response)
+            raise ModbusException(f"Error reading group {group}: {response}")
+
+        _LOGGER.debug("Read data: %s", response.registers)
+
+        # Process the registers and update data points
+        register_index = 0
+        for dataPointName, data in self.Datapoints[group].items():
+            registers = response.registers[register_index:register_index + data.Length]
+            register_index += data.Length
+
+            data.Value = self.process_registers(registers, data.Scaling)
+
     """ ******************************************************* """
     """ **************** READ SINGLE VALUE ******************** """
     """ ******************************************************* """
-    async def readValue(self, group:ModbusGroup, key) -> float:
-        # We read single register
-        _LOGGER.debug("Reading value: %s - %s", group, key)
+    async def readValue(self, group: ModbusGroup, key: str) -> float | str:
+        _LOGGER.debug("Reading value: Group: %s, Key: %s", group, key)
+
+        if key not in self.Datapoints[group]:
+            raise KeyError(f"Key '{key}' not found in group '{group}'")
+
+        datapoint = self.Datapoints[group][key]
+        length = datapoint.Length
 
         if group.mode == ModbusMode.INPUT:
-            response = self._client.read_input_registers(self.Datapoints[group][key].Address,1,self._slave_id)
+            response = self._client.read_input_registers(datapoint.Address, length, self._slave_id)
         elif group.mode == ModbusMode.HOLDING:
-            response = self._client.read_holding_registers(self.Datapoints[group][key].Address,1,self._slave_id)
+            response = self._client.read_holding_registers(datapoint.Address, length, self._slave_id)
+        else:
+            raise ValueError(f"Unsupported Modbus mode: {group.mode}")
+
+        _LOGGER.debug("Read data: %s", response.registers)
 
         if response.isError():
-            raise ModbusException('{}'.format(response))
-        else:
-            newVal_2 = self.twos_complement(response.registers[0])
-            self.Datapoints[group][key].Value = newVal_2 * self.Datapoints[group][key].Scaling
-        
-        return self.Datapoints[group][key].Value
+            _LOGGER.error("Error reading value for key '%s': %s", key, response)
+            raise ModbusException(f"Error reading value for key '{key}': {response}")
+
+        registers = response.registers[:length]
+        datapoint.Value = self.process_registers(registers, datapoint.Scaling)
+
+        return datapoint.Value
 
     """ ******************************************************* """
     """ **************** WRITE SINGLE VALUE ******************* """
     """ ******************************************************* """
-    async def writeValue(self, group, key, value):
-        # We write single holding register
-        _LOGGER.debug("Writing value: %s - %s - %s", group, key, value)
-        scaledVal = round(value/self.Datapoints[group][key].Scaling)
-        scaledVal = self.twos_complement(scaledVal)
-        response = self._client.write_register(self.Datapoints[group][key].Address, scaledVal, self._slave_id)
-        if response.isError():
-            raise ModbusException('{}'.format(response))
+    async def writeValue(self, group: ModbusGroup, key: str, value: float):
+        _LOGGER.debug("Writing value: Group: %s, Key: %s, Value: %s", group, key, value)
+
+        if key not in self.Datapoints[group]:
+            raise KeyError(f"Key '{key}' not found in group '{group}'")
+
+        datapoint = self.Datapoints[group][key]
+        length = datapoint.Length
+        if length > 2:
+            raise ValueError(f"Unsupported register length: {length}. Only 1 or 2 registers are supported.")
+
+        # Scale the value
+        scaled_value = round(value / datapoint.Scaling)
+        if scaled_value < 0:
+            scaled_value = self.twos_complement(scaled_value, bits=16 * length)
+
+        # Prepare the registers
+        registers = []
+        for _ in range(length):
+            registers.insert(0, scaled_value & 0xFFFF)  # Extract the least significant 16 bits
+            scaled_value >>= 16  # Shift the value to the next 16 bits
+
+        # Write the registers
+        if length == 1:
+            response = self._client.write_register(datapoint.Address, registers[0], self._slave_id)
         else:
-            self.Datapoints[group][key].Value = value
+            response = self._client.write_registers(datapoint.Address, registers, self._slave_id)
+
+        if response.isError():
+            _LOGGER.error("Failed to write value for key '%s': %s", key, response)
+            raise ModbusException(f"Failed to write value for key '{key}': {response}")
+
+        # Update the cached value
+        datapoint.Value = value
+        _LOGGER.debug("Successfully wrote value for key '%s': %s", key, value)
+
+    """ ******************************************************* """
+    """ *********** HELPER FOR PROCESSING REGISTERS *********** """
+    """ ******************************************************* """
+    def twos_complement(self, number: int, bits: int = 16) -> int:
+        if number < 0:
+            return number  # If the number is negative, no need for two's complement conversion.
+        
+        max_value = (1 << bits)  # Maximum value for the given bit-width.
+        if number >= max_value // 2:
+            return number - max_value  # Convert to negative value in two's complement.
+        
+        return number  # Return the number as is if it's already non-negative.
+
+    def process_registers(self, registers: list[int], scaling: float) -> float | str:
+        length = len(registers)
+
+        if length <= 2:
+            # Combine registers into a single value (big-endian)
+            combined_value = 0
+            for reg in registers:
+                combined_value = (combined_value << 16) | reg
+
+            newVal = self.twos_complement(combined_value)
+            return newVal if scaling == 1.0 else newVal * scaling
+        else:
+            # Assume this is a text string
+            try:
+                newVal = ''.join(chr(value) for value in registers)
+                return newVal.rstrip('\x00')
+            except ValueError as e:
+                _LOGGER.error("Failed to decode text: %s", e)
+                return None

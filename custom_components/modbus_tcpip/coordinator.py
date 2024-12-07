@@ -103,6 +103,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
             manufacturer=self._modbusDevice.manufacturer,
             model=self._modbusDevice.model,
             sw_version=self._modbusDevice.sw_version,
+            serial_number=self._modbusDevice.serial_number,
         )
         _LOGGER.debug("Updated device data for: %s", self.devicename) 
 
@@ -120,7 +121,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
         try:
             await self._modbusDevice.readValue(ModbusDefaultGroups.CONFIG, key)
         finally:
-            await self._update_callbacks["Config Value"](key)
+            await self._update_callbacks["Config Value"](ModbusDefaultGroups.CONFIG, key)
 
     def get_config_options(self):
         options = {}

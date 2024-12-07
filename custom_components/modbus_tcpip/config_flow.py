@@ -66,7 +66,7 @@ class ModbusOptionsFlowHandler(OptionsFlow):
 """ ################################################### """
 # Schema taking device details when adding or updating
 def getDeviceSchema(user_input: dict[str, Any] | None = None) -> vol.Schema:
-    DEVICE_MODELS = get_available_drivers()
+    DEVICE_MODELS = sorted(get_available_drivers())
 
     data_schema = vol.Schema(
         {

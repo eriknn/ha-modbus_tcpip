@@ -66,7 +66,7 @@ class Device(ModbusDevice):
             "572 Switching Threshold": ModbusDatapoint(Address=572),
         }
 
-        _LOGGER.debug("Loaded datapoints for Trox TVE")
+        _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
     async def onBeforeRead(self):
         if not self.readFirst:

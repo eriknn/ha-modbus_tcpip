@@ -65,12 +65,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry):
-    _LOGGER.debug("Updating Trox entry!")
+    _LOGGER.debug("Updating Modbus/TCP entry!")
     await hass.config_entries.async_reload(entry.entry_id)
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.debug("Unloading Trox entry!")
+    _LOGGER.debug("Unloading Modbus/TCP entry!")
 
     # Unload entries
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

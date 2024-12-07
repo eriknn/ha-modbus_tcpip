@@ -43,7 +43,8 @@ class ModbusNumberEntity(ModbusBaseEntity, NumberEntity):
         """Callback for updated value"""
         coordinator.registerOnUpdateCallback(self._key, self.update_callback)
 
-    async def update_callback(self, newKey):
+    async def update_callback(self, newGroup, newKey):
+        self._group = newGroup
         self._key = newKey
         self.async_schedule_update_ha_state(force_refresh=False)
 

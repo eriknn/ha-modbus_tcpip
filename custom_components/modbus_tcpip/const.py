@@ -2,7 +2,7 @@ from homeassistant.const import Platform
 
 # Global Constants
 DOMAIN: str = "modbus_tcpip"
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.NUMBER, Platform.SELECT, Platform.SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.NUMBER, Platform.SELECT, Platform.SENSOR, Platform.SWITCH]
 
 # Configuration Device Constants
 CONF_NAME: str = "name"
