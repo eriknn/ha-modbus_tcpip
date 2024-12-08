@@ -36,6 +36,8 @@ class ModbusDevice(metaclass=InitHelper):
         # Add default data groups
         self.Datapoints[ModbusDefaultGroups.CONFIG] = { }
         self.Datapoints[ModbusDefaultGroups.UI] = { }
+
+        self.firstRead = True
     
     def post_init(self):
         # Add Config UI if we have config values
@@ -62,7 +64,10 @@ class ModbusDevice(metaclass=InitHelper):
         for group, datapoints in self.Datapoints.items():
             if group.poll_mode == ModbusPollMode.POLL_ON:
                 await self.readGroup(group)
-        
+            if self.firstRead:
+                if group.poll_mode == ModbusPollMode.POLL_ONCE:
+                    await self.readGroup(group)        
+                self.firstRead = False
         await self.onAfterRead()
 
     """ ******************************************************* """
@@ -202,5 +207,5 @@ class ModbusDevice(metaclass=InitHelper):
                 newVal = ''.join(chr(value) for value in registers)
                 return newVal.rstrip('\x00')
             except ValueError as e:
-                _LOGGER.error("Failed to decode text: %s", e)
+                # Failed to decode text, most likely just registers we are ignoring
                 return None

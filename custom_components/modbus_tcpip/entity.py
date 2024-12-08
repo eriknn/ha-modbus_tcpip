@@ -31,5 +31,10 @@ class ModbusBaseEntity(CoordinatorEntity):
 
     @property
     def extra_state_attributes(self):
-        """Return the state attributes."""
-        return self._extra_state_attributes        
+        """Return entity specific state attributes."""
+        attrs = {}
+
+        new_attrs = self.coordinator.get_attrs(self._group, self._key)
+        if new_attrs is not None:
+            attrs.update(new_attrs)
+        return attrs

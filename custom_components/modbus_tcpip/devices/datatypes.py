@@ -1,6 +1,7 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Dict, Optional
 
 ###########################################
 ###### DATA TYPES FOR HOME ASSISTANT ######
@@ -48,7 +49,8 @@ class ModbusMode(Enum):
 
 class ModbusPollMode(Enum):
     POLL_OFF = 0      # Values will not be read automatically
-    POLL_ON = 1     # Values will be read each poll interval
+    POLL_ON = 1         # Values will be read each poll interval
+    POLL_ONCE = 2       # Just read them once, for example for static configuration
 
 ModbusGroup = namedtuple("ModbusGroup", ["unique_id", "mode", "poll_mode"])
 class ModbusDefaultGroups(Enum):
@@ -73,4 +75,5 @@ class ModbusDatapoint:
     Length: int = 1                                     # Number of registers
     Scaling: float = 1                                  # Multiplier for raw value      
     Value: float = 0                                    # Scaled value
+    Attrs: Optional[Dict] = None                        # Dict for attributes
     DataType: ModbusData = None                         # Entitiy parameters

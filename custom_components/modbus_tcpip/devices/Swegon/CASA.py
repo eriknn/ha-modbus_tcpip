@@ -4,12 +4,11 @@ from ..modbusdevice import ModbusDevice
 from ..datatypes import ModbusDatapoint, ModbusGroup, ModbusDefaultGroups, ModbusMode, ModbusPollMode
 from ..datatypes import ModbusSensorData, ModbusNumberData, ModbusSelectData, ModbusBinarySensorData, ModbusSwitchData, ModbusButtonData
 
-from homeassistant.const import UnitOfVolumeFlowRate, UnitOfElectricPotential, UnitOfTemperature, UnitOfPressure
-from homeassistant.const import PERCENTAGE, DEGREE, CONCENTRATION_PARTS_PER_MILLION
+from homeassistant.const import UnitOfTemperature
+from homeassistant.const import PERCENTAGE
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.components.number import NumberDeviceClass
-from homeassistant.helpers.entity import EntityCategory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ class Device(ModbusDevice):
     GROUP_COMMANDS = ModbusGroup(0, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
     GROUP_COMMANDS2 = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
     GROUP_SETPOINTS = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
-    GROUP_DEVICE_INFO = ModbusGroup(3, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
+    GROUP_DEVICE_INFO = ModbusGroup(3, ModbusMode.INPUT, ModbusPollMode.POLL_ONCE)
     GROUP_ALARMS = ModbusGroup(4, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
     GROUP_SENSORS = ModbusGroup(5, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
     GROUP_SENSORS2 = ModbusGroup(6, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
@@ -137,16 +136,7 @@ class Device(ModbusDevice):
             "Exhaust Fan": ModbusDatapoint(Address=6303, DataType=ModbusSensorData(units=PERCENTAGE)),
             "Supply_Fan_RPM": ModbusDatapoint(Address=6304),
             "Exhaust_Fan_RPM": ModbusDatapoint(Address=6305),
-            "NotUsed1": ModbusDatapoint(Address=6306),
-            "NotUsed2": ModbusDatapoint(Address=6307),
-            "NotUsed3": ModbusDatapoint(Address=6308),
-            "NotUsed4": ModbusDatapoint(Address=6309),
-            "NotUsed5": ModbusDatapoint(Address=6310),
-            "NotUsed6": ModbusDatapoint(Address=6311),
-            "NotUsed7": ModbusDatapoint(Address=6312),
-            "NotUsed8": ModbusDatapoint(Address=6313),
-            "NotUsed9": ModbusDatapoint(Address=6314),
-            "Temp_SP2": ModbusDatapoint(Address=6315),
+            "NotUsed": ModbusDatapoint(Address=6306, Length=10),
             "Heating Output": ModbusDatapoint(Address=6316, DataType=ModbusSensorData(units=PERCENTAGE)),            
         }
 
@@ -175,9 +165,6 @@ class Device(ModbusDevice):
 
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
-    async def onBeforeRead(self):
-        pass
-
     async def onAfterRead(self):
         # Update device info
         self.model = self.Datapoints[self.GROUP_DEVICE_INFO]["Model Name"].Value
@@ -192,5 +179,17 @@ class Device(ModbusDevice):
         fresh = self.Datapoints[self.GROUP_SENSORS]["Fresh Air Temp"].Value
         sup = self.Datapoints[self.GROUP_SENSORS]["Supply Temp before re-heater"].Value
         extract = self.Datapoints[self.GROUP_SENSORS]["Extract Temp"].Value
-        efficiency = ((sup - fresh) / (extract - fresh)) * 100
-        self.Datapoints[self.GROUP_UI]["Efficiency"].Value = round(efficiency, 1)
+
+        try:
+            efficiency = ((sup - fresh) / (extract - fresh)) * 100
+            self.Datapoints[self.GROUP_UI]["Efficiency"].Value = round(efficiency, 1)
+        except ZeroDivisionError:
+            self.Datapoints[self.GROUP_UI]["Efficiency"].Value = 0
+
+        # Set alarms as attributes on Alarm-datapoint
+        alarms = self.Datapoints[self.GROUP_ALARMS]
+        attrs = {}
+        for (dataPointName, data) in alarms.items():
+            if data.Value:
+                attrs.update({dataPointName:"ALARM"})
+        alarms["Active Alarms"].Attrs = attrs

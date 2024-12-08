@@ -138,6 +138,12 @@ class ModbusCoordinator(DataUpdateCoordinator):
                 return self._modbusDevice.Datapoints[group][key].Value
         return None
 
+    def get_attrs(self, group, key):
+        if group in self._modbusDevice.Datapoints:
+            if key in self._modbusDevice.Datapoints[group]:
+                return self._modbusDevice.Datapoints[group][key].Attrs
+        return None
+
     async def write_value(self, group, key, value) -> bool:
         _LOGGER.debug("Write_Data: %s - %s - %s", group, key, value)
         await self._modbusDevice.writeValue(group, key, value)
