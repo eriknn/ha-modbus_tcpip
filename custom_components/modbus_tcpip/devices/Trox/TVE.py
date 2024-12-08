@@ -38,7 +38,7 @@ class Device(ModbusDevice):
             "Position": ModbusDatapoint(Address=4, Scaling=0.01, DataType=ModbusSensorData(units=PERCENTAGE)),
             "Position Degrees": ModbusDatapoint(Address=5, DataType=ModbusSensorData(units=DEGREE)),
             "Flowrate Percent": ModbusDatapoint(Address=6, Scaling=0.01, DataType=ModbusSensorData(units=PERCENTAGE)),
-            "Flowrate Actual": ModbusDatapoint(Address=7, Scaling=1, DataType=ModbusSensorData(units=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR, icon="mdi:weather-windy")),
+            "Flowrate Actual": ModbusDatapoint(Address=7, Scaling=1, DataType=ModbusSensorData(deviceClass=SensorDeviceClass.VOLUME_FLOW_RATE, units=UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR, icon="mdi:weather-windy")),
             "Analog Setpoint": ModbusDatapoint(Address=8, Scaling=0.001, DataType=ModbusSensorData(units=UnitOfElectricPotential.VOLT)),
         }
 
