@@ -1,0 +1,10 @@
+request_update:
+  name: "Request value update"
+  description: "Triggers an update of data associated with a specific device."
+  fields:
+    device_id:
+      name: "Device ID"
+      description: "The device for which to update values."
+      selector:
+        device:
+          integration: modbus_tcpip

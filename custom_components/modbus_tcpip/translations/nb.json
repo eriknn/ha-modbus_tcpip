@@ -40,5 +40,17 @@
             "add_success": "Enhet {dev_name} ble lagt til",
 			"already_configured": "Enhet {dev_name} er allerede konfigurert"
 		}
+    },
+    "services": {
+        "request_update": {
+            "name": "Be om verdioppdatering",
+            "description": "Starter en oppdatering av data knyttet til en spesifikk enhet.",
+            "fields": {
+                "device_id": {
+                    "name": "Enhets ID",
+                    "description": "Enheten som skal oppdateres."
+                }
+            }
+        }
     }
 }
