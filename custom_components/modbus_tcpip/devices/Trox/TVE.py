@@ -17,12 +17,10 @@ class Device(ModbusDevice):
     GROUP_COMMANDS = ModbusGroup(0, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
     GROUP_SENSORS = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
     GROUP_DEVICE_INFO = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
+    GROUP_UI = ModbusGroup(3, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF)
 
     def __init__(self, host:str, port:int, slave_id:int):
         super().__init__(host, port, slave_id)
-
-        # Some custom device stuff
-        self.readFirst = False
 
         # Override static device information
         self.manufacturer="Trox"
@@ -47,7 +45,7 @@ class Device(ModbusDevice):
         # DEVICE_INFO - Read-only
         self.Datapoints[self.GROUP_DEVICE_INFO] = {
             "FW": ModbusDatapoint(Address=103),
-            "Status": ModbusDatapoint(Address=104, DataType=ModbusBinarySensorData(deviceClass=BinarySensorDeviceClass.PROBLEM, icon="mdi:bell"))
+            "Status": ModbusDatapoint(Address=104)
         }
 
         # CONFIGURATION - Read/Write
@@ -66,10 +64,15 @@ class Device(ModbusDevice):
             "572 Switching Threshold": ModbusDatapoint(Address=572),
         }
 
+        # UI Datapoints that don't connect directly with modbus address
+        self.Datapoints[self.GROUP_UI] = {
+            "Active Alarms": ModbusDatapoint(DataType=ModbusBinarySensorData(deviceClass=BinarySensorDeviceClass.PROBLEM, icon="mdi:bell"))
+        }
+
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
     async def onBeforeRead(self):
-        if not self.readFirst:
+        if self.firstRead:
             match await self.readValue(ModbusDefaultGroups.CONFIG, "201 Volume Flow Unit"):
                 case 0:
                     self.Datapoints[self.GROUP_SENSORS]["Flowrate Actual"].Scaling = 3.6
@@ -77,7 +80,22 @@ class Device(ModbusDevice):
                     self.Datapoints[self.GROUP_SENSORS]["Flowrate Actual"].Scaling = 1
                 case 6:
                     self.Datapoints[self.GROUP_SENSORS]["Flowrate Actual"].Scaling = 1.69901
-            self.readFirst = True
 
     async def onAfterRead(self):
         self.sw_version = self.Datapoints[self.GROUP_DEVICE_INFO]["FW"].Value
+
+        # Handle alarms
+        alarms = self.Datapoints[self.GROUP_DEVICE_INFO]["Status"]
+
+        actAlarm = False
+        attrs = {}
+        if (alarms & (1 << 4)) != 0:
+            attrs.update({"Mechanical Overload":"ALARM"})
+            actAlarm = True
+        if (alarms & (1 << 7)) != 0:
+            attrs.update({"Internal Activity":"WARNING"})
+        if (alarms & (1 << 9)) != 0:
+            attrs.update({"Bus Timeout":"WARNING"})
+
+        self.Datapoints[self.GROUP_UI]["Active Alarms"].Value = actAlarm
+        self.Datapoints[self.GROUP_UI]["Active Alarms"].Attrs = attrs

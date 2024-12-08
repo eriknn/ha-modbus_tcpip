@@ -99,7 +99,7 @@ class ModbusDevice(metaclass=InitHelper):
             _LOGGER.error("Error reading group %s: %s", group, response)
             raise ModbusException(f"Error reading group {group}: {response}")
 
-        _LOGGER.debug("Read data: %s", response.registers)
+        _LOGGER.debug("Read data - %s: %s", group.unique_id, response.registers)
 
         # Process the registers and update data points
         register_index = 0

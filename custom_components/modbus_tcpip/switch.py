@@ -20,6 +20,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     for group, datapoints in coordinator._modbusDevice.Datapoints.items():
         for name, datapoint in datapoints.items():
             if isinstance(datapoint.DataType, ModbusSwitchData):
+                _LOGGER.debug("Adding switch: %s %s %s", group, name, datapoint.DataType)
                 entity = ModbusEntity(group, name, datapoint.DataType)
                 ha_entities.append(ModbusSwitchEntity(coordinator, entity))
 
