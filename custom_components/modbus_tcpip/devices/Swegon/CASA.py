@@ -36,7 +36,7 @@ class Device(ModbusDevice):
             "Operating Mode": ModbusDatapoint(Address=5000, DataType=ModbusSelectData(options={0: "Stopped", 1: "Away", 2: "Home", 3: "Boost", 4: "Travel"})),
             "Fireplace Mode": ModbusDatapoint(Address=5001, DataType=ModbusSwitchData()),
             "Unused": ModbusDatapoint(Address=5002),
-            "Travelling Mode": ModbusDatapoint(Address=5002, DataType=ModbusSwitchData()),
+            "Travelling Mode": ModbusDatapoint(Address=5003, DataType=ModbusSwitchData()),
         }
 
         # COMMANDS2 - Write

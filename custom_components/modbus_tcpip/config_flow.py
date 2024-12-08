@@ -33,7 +33,7 @@ class ModbusFlowHandler(ConfigFlow, domain=DOMAIN):
 
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Get the options flow for this handler."""
-        return ModbusOptionsFlowHandler(config_entry)
+        return ModbusOptionsFlowHandler()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle a flow initialized by the user, adding the integration."""
@@ -42,12 +42,9 @@ class ModbusFlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
-        return self.async_show_form(step_id="user", data_schema=getDeviceSchema(DEVICE_DATA.copy()), errors=errors)
+        return self.async_show_form(step_id="user", data_schema=await getDeviceSchema(DEVICE_DATA.copy()), errors=errors)
 
 class ModbusOptionsFlowHandler(OptionsFlow):
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
-
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         # Manage the options for the custom component."""
 
@@ -59,14 +56,14 @@ class ModbusOptionsFlowHandler(OptionsFlow):
 
             return self.async_create_entry(title="", data={})
 
-        return self.async_show_form(step_id="init", data_schema=getDeviceSchema(self.config_entry.data))
+        return self.async_show_form(step_id="init", data_schema=await getDeviceSchema(self.config_entry.data))
 
 """ ################################################### """
 """                     Dynamic schemas                 """
 """ ################################################### """
 # Schema taking device details when adding or updating
-def getDeviceSchema(user_input: dict[str, Any] | None = None) -> vol.Schema:
-    DEVICE_MODELS = sorted(get_available_drivers())
+async def getDeviceSchema(user_input: dict[str, Any] | None = None) -> vol.Schema:
+    DEVICE_MODELS = sorted(await get_available_drivers())
 
     data_schema = vol.Schema(
         {

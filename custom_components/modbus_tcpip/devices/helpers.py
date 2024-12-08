@@ -6,10 +6,14 @@ from importlib import import_module
 
 _LOGGER = logging.getLogger(__name__)
 
-def get_available_drivers():
+async def get_available_drivers():
     # Get the base path to the "devices" folder
     base_path = os.path.dirname(os.path.abspath(__file__))  # Path to "devices/helpers.py"
 
+    # Offload the blocking os.walk() operation to a separate thread
+    return await asyncio.to_thread(scan_drivers, base_path)
+
+def scan_drivers(base_path):
     drivers = []
     for root, _, files in os.walk(base_path):
         if root == base_path:  # Skip files in the "devices/" root directory

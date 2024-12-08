@@ -64,10 +64,11 @@ class ModbusDevice(metaclass=InitHelper):
         for group, datapoints in self.Datapoints.items():
             if group.poll_mode == ModbusPollMode.POLL_ON:
                 await self.readGroup(group)
-            if self.firstRead:
-                if group.poll_mode == ModbusPollMode.POLL_ONCE:
-                    await self.readGroup(group)        
-                self.firstRead = False
+            elif group.poll_mode == ModbusPollMode.POLL_ONCE and self.firstRead:
+                await self.readGroup(group)        
+        
+        self.firstRead = False
+                
         await self.onAfterRead()
 
     """ ******************************************************* """
