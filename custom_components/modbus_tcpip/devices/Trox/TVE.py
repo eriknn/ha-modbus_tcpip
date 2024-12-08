@@ -85,7 +85,7 @@ class Device(ModbusDevice):
         self.sw_version = self.Datapoints[self.GROUP_DEVICE_INFO]["FW"].Value
 
         # Handle alarms
-        alarms = self.Datapoints[self.GROUP_DEVICE_INFO]["Status"]
+        alarms = self.Datapoints[self.GROUP_DEVICE_INFO]["Status"].Value
 
         actAlarm = False
         attrs = {}
