@@ -23,9 +23,9 @@ class ModbusSelectData(ModbusData):
 @dataclass
 class ModbusNumberData(ModbusData):
     units: str = None
-    min_value: int = None
-    max_value: int = None
-    step: int = None
+    min_value: int = 0
+    max_value: int = 65535
+    step: int = 1
 
 @dataclass
 class ModbusBinarySensorData(ModbusData):
@@ -71,7 +71,7 @@ class ModbusDefaultGroups(Enum):
 
 @dataclass
 class ModbusDatapoint:
-    Address: int  = 0                                   # 0-indexed address
+    Address: int = 0                                   # 0-indexed address
     Length: int = 1                                     # Number of registers
     Scaling: float = 1                                  # Multiplier for raw value      
     Value: float = 0                                    # Scaled value

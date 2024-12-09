@@ -3,31 +3,30 @@ import logging
 
 from collections import namedtuple
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .devices.datatypes import ModbusGroup, ModbusDatapoint
 
 _LOGGER = logging.getLogger(__name__)
-
-ModbusEntity = namedtuple('ModbusEntity', ['group', 'key', 'data_type'])
 
 class ModbusBaseEntity(CoordinatorEntity):
     """Modbus base entity class."""
 
-    def __init__(self, coordinator, modbusentity):
+    def __init__(self, coordinator, group:ModbusGroup, key:str, modbusDataPoint:ModbusDatapoint):
         """Pass coordinator to CoordinatorEntity."""
         super().__init__(coordinator)
 
         """Generic Entity properties"""
-        self._attr_entity_category = modbusentity.data_type.category
-        self._attr_icon = modbusentity.data_type.icon
-        self._attr_name = "{} {}".format(self.coordinator.devicename, modbusentity.key)
+        self._attr_entity_category = modbusDataPoint.DataType.category
+        self._attr_icon = modbusDataPoint.DataType.icon
+        self._attr_name = "{} {}".format(self.coordinator.devicename, key)
         self._attr_unique_id = "{}-{}".format(self.coordinator.device_id, self.name)
         self._attr_device_info = {
             "identifiers": self.coordinator.identifiers,
         }
         self._extra_state_attributes = {}
         
-        """Store this entities key."""
-        self._group = modbusentity.group
-        self._key = modbusentity.key
+        """Store this entities keys."""
+        self._group = group
+        self._key = key
 
     @property
     def extra_state_attributes(self):

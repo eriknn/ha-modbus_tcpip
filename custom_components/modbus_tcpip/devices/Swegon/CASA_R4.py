@@ -4,7 +4,7 @@ from ..modbusdevice import ModbusDevice
 from ..datatypes import ModbusDatapoint, ModbusGroup, ModbusDefaultGroups, ModbusMode, ModbusPollMode
 from ..datatypes import ModbusSensorData, ModbusNumberData, ModbusSelectData, ModbusBinarySensorData, ModbusSwitchData, ModbusButtonData
 
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import UnitOfTemperature, UnitOfTime
 from homeassistant.const import PERCENTAGE
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass
@@ -20,9 +20,8 @@ class Device(ModbusDevice):
     GROUP_DEVICE_INFO = ModbusGroup(3, ModbusMode.INPUT, ModbusPollMode.POLL_ONCE)
     GROUP_ALARMS = ModbusGroup(4, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
     GROUP_SENSORS = ModbusGroup(5, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
-    GROUP_SENSORS2 = ModbusGroup(6, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
-    GROUP_UNIT_STATUSES = ModbusGroup(7, ModbusMode.INPUT, ModbusPollMode.POLL_ON)  
-    GROUP_UI = ModbusGroup(8, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
+    GROUP_UNIT_STATUSES = ModbusGroup(6, ModbusMode.INPUT, ModbusPollMode.POLL_ON)  
+    GROUP_UI = ModbusGroup(7, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
 
     def __init__(self, host:str, port:int, slave_id:int):
         super().__init__(host, port, slave_id)
@@ -46,8 +45,7 @@ class Device(ModbusDevice):
 
         # SETPOINTS - Read/Write
         self.Datapoints[self.GROUP_SETPOINTS] = {
-            "Temperature Setpoint": ModbusDatapoint(Address=5100, Scaling=0.1, 
-                                                    DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=13, max_value=25, step=0.1))
+            "Temperature Setpoint": ModbusDatapoint(Address=5100, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=13, max_value=25, step=0.1))
         }
 
         # DEVICE_INFO - Read-only
@@ -121,10 +119,7 @@ class Device(ModbusDevice):
             "Exhaust Pressure": ModbusDatapoint(Address=6218, Scaling=1.0),
             "Supply Flow": ModbusDatapoint(Address=6219, Scaling=3.6),
             "Exhaust Flow": ModbusDatapoint(Address=6220, Scaling=3.6),
-        }
-
-        # SENSORS2 - Read
-        self.Datapoints[self.GROUP_SENSORS2] = {
+            "Unused": ModbusDatapoint(Address=6221, Length=12),
             "Heat Exchanger": ModbusDatapoint(Address=6233, DataType=ModbusSensorData(units=PERCENTAGE)),
         }
 
@@ -142,25 +137,25 @@ class Device(ModbusDevice):
 
         # CONFIGURATION - Read/Write
         self.Datapoints[ModbusDefaultGroups.CONFIG] = {
-            "Travelling Mode Speed Drop": ModbusDatapoint(Address=5105),
-            "Fireplace Run Time": ModbusDatapoint(Address=5103),
-            "Fireplace Max Speed Difference": ModbusDatapoint(Address=5104),
+            "Travelling Mode Speed Drop": ModbusDatapoint(Address=5105, DataType=ModbusNumberData(units=PERCENTAGE, min_value=0, max_value=20, step=1)),
+            "Fireplace Run Time": ModbusDatapoint(Address=5103, DataType=ModbusNumberData(units=UnitOfTime.MINUTES, min_value=0, max_value=60, step=1)),
+            "Fireplace Max Speed Difference": ModbusDatapoint(Address=5104, DataType=ModbusNumberData(units=PERCENTAGE, min_value=0, max_value=25, step=1)),
             "Night Cooling": ModbusDatapoint(Address=5163),
-            "Night Cooling FreshAir Max": ModbusDatapoint(Address=5164),
-            "Night Cooling FreshAir Start": ModbusDatapoint(Address=5165),
-            "Night Cooling RoomTemp Start": ModbusDatapoint(Address=5166),
-            "Night Cooling SupplyTemp Min": ModbusDatapoint(Address=5167),
-            "Away Supply Speed": ModbusDatapoint(Address=5301),
-            "Away Exhaust Speed": ModbusDatapoint(Address=5302),
-            "Home Supply Speed": ModbusDatapoint(Address=5303),
-            "Home Exhaust Speed": ModbusDatapoint(Address=5304),
-            "Boost Supply Speed": ModbusDatapoint(Address=5305),
-            "Boost Exhaust Speed": ModbusDatapoint(Address=5306),
+            "Night Cooling FreshAir Max": ModbusDatapoint(Address=5164, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=25, step=0.1)),
+            "Night Cooling FreshAir Start": ModbusDatapoint(Address=5165, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=25, step=0.1)),
+            "Night Cooling RoomTemp Start": ModbusDatapoint(Address=5166, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=35, step=0.1)),
+            "Night Cooling SupplyTemp Min": ModbusDatapoint(Address=5167, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=10, max_value=25, step=0.1)),
+            "Away Supply Speed": ModbusDatapoint(Address=5301, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
+            "Away Exhaust Speed": ModbusDatapoint(Address=5302, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
+            "Home Supply Speed": ModbusDatapoint(Address=5303, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
+            "Home Exhaust Speed": ModbusDatapoint(Address=5304, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
+            "Boost Supply Speed": ModbusDatapoint(Address=5305, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
+            "Boost Exhaust Speed": ModbusDatapoint(Address=5306, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
         }
 
          # CONFIGURATION - Read/Write
         self.Datapoints[self.GROUP_UI] = {
-            "Efficiency": ModbusDatapoint(Address=0, DataType=ModbusSensorData(units=PERCENTAGE)),
+            "Efficiency": ModbusDatapoint(DataType=ModbusSensorData(units=PERCENTAGE)),
         }       
 
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)

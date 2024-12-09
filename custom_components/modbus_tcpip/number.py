@@ -4,9 +4,9 @@ from homeassistant.components.number import NumberEntity
 
 from .const import DOMAIN
 from .coordinator import ModbusCoordinator
-from .entity import ModbusBaseEntity, ModbusEntity
+from .entity import ModbusBaseEntity
 
-from .devices.datatypes import ModbusNumberData
+from .devices.datatypes import ModbusGroup, ModbusDefaultGroups, ModbusDatapoint, ModbusNumberData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,32 +18,50 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # Load entities
     ha_entities = []
     for group, datapoints in coordinator._modbusDevice.Datapoints.items():
-        for name, datapoint in datapoints.items():
-            if isinstance(datapoint.DataType, ModbusNumberData):
-                entity = ModbusEntity(group, name, datapoint.DataType)
-                ha_entities.append(ModbusNumberEntity(coordinator, entity))
+        if group != ModbusDefaultGroups.CONFIG:
+            for key, datapoint in datapoints.items():
+                if isinstance(datapoint.DataType, ModbusNumberData):
+                    ha_entities.append(ModbusNumberEntity(coordinator, group, key, datapoint))
 
     async_add_devices(ha_entities, True)
 
 class ModbusNumberEntity(ModbusBaseEntity, NumberEntity):
     """Representation of a Number."""
 
-    def __init__(self, coordinator, modbusentity):
-        """Pass coordinator to ModbusEntity."""
-        super().__init__(coordinator, modbusentity)
+    def __init__(self, coordinator, group:ModbusGroup, key:str, modbusDataPoint:ModbusDatapoint):
+        """Initialize ModbusBaseEntity."""
+        super().__init__(coordinator, group, key, modbusDataPoint)
 
         """Number Entity properties"""
-        self._attr_device_class = modbusentity.data_type.deviceClass
+        self._attr_device_class = modbusDataPoint.DataType.deviceClass
         self._attr_mode = "box"
-        self._attr_native_min_value = modbusentity.data_type.min_value
-        self._attr_native_max_value = modbusentity.data_type.max_value
-        self._attr_native_step = modbusentity.data_type.step
-        self._attr_native_unit_of_measurement = modbusentity.data_type.units
+        self._attr_native_min_value = modbusDataPoint.DataType.min_value
+        self._attr_native_max_value = modbusDataPoint.DataType.max_value
+        self._attr_native_step = modbusDataPoint.DataType.step
+        self._attr_native_unit_of_measurement = modbusDataPoint.DataType.units
 
         """Callback for updated value"""
         coordinator.registerOnUpdateCallback(self._key, self.update_callback)
 
+    # Call back for special config number.
     async def update_callback(self, newGroup, newKey):
+        newEntity:ModbusDatapoint = self.coordinator._modbusDevice.Datapoints[newGroup][newKey]
+
+        if isinstance(newEntity.DataType, ModbusNumberData):
+            self._attr_device_class = newEntity.DataType.deviceClass
+            self._attr_native_min_value = newEntity.DataType.min_value
+            self._attr_native_max_value = newEntity.DataType.max_value
+            self._attr_native_step = newEntity.DataType.step
+            self._attr_native_unit_of_measurement = newEntity.DataType.units
+            _LOGGER.debug("Settings: %s %s %s %s: ", self._attr_native_min_value, self._attr_native_max_value, self._attr_native_step, self._attr_native_unit_of_measurement)
+        else:
+            self._attr_device_class = None
+            self._attr_native_min_value = 0
+            self._attr_native_max_value = 65535
+            self._attr_native_step = 1
+            self._attr_native_unit_of_measurement = None
+            _LOGGER.debug("Settings: Cleared!")
+
         self._group = newGroup
         self._key = newKey
         self.async_schedule_update_ha_state(force_refresh=False)

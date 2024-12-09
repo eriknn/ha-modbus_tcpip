@@ -4,9 +4,9 @@ from homeassistant.components.sensor import SensorEntity
 
 from .const import DOMAIN
 from .coordinator import ModbusCoordinator
-from .entity import ModbusBaseEntity, ModbusEntity
+from .entity import ModbusBaseEntity
 
-from .devices.datatypes import ModbusSensorData
+from .devices.datatypes import ModbusGroup, ModbusDefaultGroups, ModbusDatapoint, ModbusSensorData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,23 +18,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # Load entities
     ha_entities = []
     for group, datapoints in coordinator._modbusDevice.Datapoints.items():
-        for name, datapoint in datapoints.items():
-            if isinstance(datapoint.DataType, ModbusSensorData):
-                entity = ModbusEntity(group, name, datapoint.DataType)
-                ha_entities.append(ModbusSensorEntity(coordinator, entity))
+        if group != ModbusDefaultGroups.CONFIG:
+            for key, datapoint in datapoints.items():
+                if isinstance(datapoint.DataType, ModbusSensorData):
+                    ha_entities.append(ModbusSensorEntity(coordinator, group, key, datapoint))
 
     async_add_devices(ha_entities, True)
-
 
 class ModbusSensorEntity(ModbusBaseEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, coordinator, modbusentity):
-        super().__init__(coordinator, modbusentity)
+    def __init__(self, coordinator, group:ModbusGroup, key:str, modbusDataPoint:ModbusDatapoint):
+        """Initialize ModbusBaseEntity."""
+        super().__init__(coordinator, group, key, modbusDataPoint)
 
         """Sensor Entity properties"""
-        self._attr_device_class = modbusentity.data_type.deviceClass
-        self._attr_native_unit_of_measurement = modbusentity.data_type.units
+        self._attr_device_class = modbusDataPoint.DataType.deviceClass
+        self._attr_native_unit_of_measurement = modbusDataPoint.DataType.units
 
     @property
     def native_value(self):

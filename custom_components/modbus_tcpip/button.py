@@ -4,9 +4,9 @@ from homeassistant.components.button import ButtonEntity
 
 from .const import DOMAIN
 from .coordinator import ModbusCoordinator
-from .entity import ModbusBaseEntity, ModbusEntity
+from .entity import ModbusBaseEntity
 
-from .devices.datatypes import ModbusButtonData
+from .devices.datatypes import ModbusGroup, ModbusDefaultGroups, ModbusDatapoint, ModbusButtonData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,21 +18,22 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # Load entities
     ha_entities = []
     for group, datapoints in coordinator._modbusDevice.Datapoints.items():
-        for name, datapoint in datapoints.items():
-            if isinstance(datapoint.DataType, ModbusButtonData):
-                entity = ModbusEntity(group, name, datapoint.DataType)
-                ha_entities.append(ModbusButtonEntity(coordinator, entity))
+        if group != ModbusDefaultGroups.CONFIG:
+            for key, datapoint in datapoints.items():
+                if isinstance(datapoint.DataType, ModbusButtonData):
+                    ha_entities.append(ModbusButtonEntity(coordinator, group, key, datapoint))
 
     async_add_devices(ha_entities, True)
 
 class ModbusButtonEntity(ModbusBaseEntity, ButtonEntity):
     """Representation of a Button."""
 
-    def __init__(self, coordinator, modbusentity):
-        super().__init__(coordinator, modbusentity)
+    def __init__(self, coordinator, group:ModbusGroup, key:str, modbusDataPoint:ModbusDatapoint):
+        """Initialize ModbusBaseEntity."""
+        super().__init__(coordinator, group, key, modbusDataPoint)
 
         """Button Entity properties"""
-        self._attr_device_class = modbusentity.data_type.deviceClass
+        self._attr_device_class = modbusDataPoint.DataType.deviceClass
 
     async def async_press(self) -> None:
         """ Write value to device """

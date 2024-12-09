@@ -4,9 +4,9 @@ from homeassistant.components.switch import SwitchEntity
 
 from .const import DOMAIN
 from .coordinator import ModbusCoordinator
-from .entity import ModbusBaseEntity, ModbusEntity
+from .entity import ModbusBaseEntity
 
-from .devices.datatypes import ModbusSwitchData
+from .devices.datatypes import ModbusGroup, ModbusDefaultGroups, ModbusDatapoint, ModbusSwitchData
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,19 +18,19 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # Load entities
     ha_entities = []
     for group, datapoints in coordinator._modbusDevice.Datapoints.items():
-        for name, datapoint in datapoints.items():
-            if isinstance(datapoint.DataType, ModbusSwitchData):
-                _LOGGER.debug("Adding switch: %s %s %s", group, name, datapoint.DataType)
-                entity = ModbusEntity(group, name, datapoint.DataType)
-                ha_entities.append(ModbusSwitchEntity(coordinator, entity))
-
+        if group != ModbusDefaultGroups.CONFIG:
+            for key, datapoint in datapoints.items():
+                if isinstance(datapoint.DataType, ModbusSwitchData):
+                    ha_entities.append(ModbusSwitchEntity(coordinator, group, key, datapoint))
+                
     async_add_devices(ha_entities, True)
 
 class ModbusSwitchEntity(ModbusBaseEntity, SwitchEntity):
     """Representation of a Switch."""
 
-    def __init__(self, coordinator, modbusentity):
-        super().__init__(coordinator, modbusentity)
+    def __init__(self, coordinator, group:ModbusGroup, key:str, modbusDataPoint:ModbusDatapoint):
+        """Initialize ModbusBaseEntity."""
+        super().__init__(coordinator, group, key, modbusDataPoint)
 
     @property
     def is_on(self):
