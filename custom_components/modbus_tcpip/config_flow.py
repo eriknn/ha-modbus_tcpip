@@ -42,6 +42,14 @@ class ModbusFlowHandler(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
 
+        # Copy ip from existing integration, just for convenience
+        existing_entries = self.hass.config_entries.async_entries(DOMAIN)
+        if existing_entries:
+            last_entry = existing_entries[-1]
+            DEVICE_DATA[CONF_DEVICE_MODEL]= last_entry.data[CONF_DEVICE_MODEL]
+            DEVICE_DATA[CONF_IP]= last_entry.data[CONF_IP]
+            DEVICE_DATA[CONF_PORT]= last_entry.data[CONF_PORT]
+
         return self.async_show_form(step_id="user", data_schema=await getDeviceSchema(DEVICE_DATA.copy()), errors=errors)
 
 class ModbusOptionsFlowHandler(OptionsFlow):
