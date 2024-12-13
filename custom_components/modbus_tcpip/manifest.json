@@ -3,11 +3,10 @@
 	"name": "Modbus TCP/IP",
 	"codeowners": ["@eriknn"],
 	"config_flow": true,
-	"dependencies": ["modbus"],
 	"documentation": "https://github.com/eriknn/modbus_tcpip",
 	"iot_class": "local_polling",
 	"issue_tracker": "https://github.com/eriknn/modbus_tcpip/issues",
 	"loggers": ["custom_components.modbus_tcpip"],
-	"requirements": [],
+	"requirements": ["pymodbus==3.6.9"],
 	"version": "1.0.0"
 }
