@@ -1,4 +1,4 @@
-from CASA_R4 import Device as BaseDevice
+from .CASA_R4 import Device as BaseDevice
 
 class Device(BaseDevice):
     def __init__(self, host:str, port:int, slave_id:int):
