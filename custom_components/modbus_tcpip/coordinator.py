@@ -52,6 +52,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
         device_class = await load_device_class(self.device_model)
         if device_class is not None:
             self._modbusDevice = device_class(self.ip, self.port, self.slave_id)
+            await self._modbusDevice.readData()
 
     @property
     def device_id(self):
@@ -115,8 +116,6 @@ class ModbusCoordinator(DataUpdateCoordinator):
         self._update_callbacks.update({entity: callbackfunc})
 
     async def config_select(self, key, value):
-        _LOGGER.debug("Selected: %s %s", key, value)
-
         self.config_selection = value
         try:
             await self._modbusDevice.readValue(ModbusDefaultGroups.CONFIG, key)

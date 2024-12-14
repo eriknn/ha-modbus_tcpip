@@ -140,7 +140,7 @@ class Device(ModbusDevice):
             "Travelling Mode Speed Drop": ModbusDatapoint(Address=5105, DataType=ModbusNumberData(units=PERCENTAGE, min_value=0, max_value=20, step=1)),
             "Fireplace Run Time": ModbusDatapoint(Address=5103, DataType=ModbusNumberData(units=UnitOfTime.MINUTES, min_value=0, max_value=60, step=1)),
             "Fireplace Max Speed Difference": ModbusDatapoint(Address=5104, DataType=ModbusNumberData(units=PERCENTAGE, min_value=0, max_value=25, step=1)),
-            "Night Cooling": ModbusDatapoint(Address=5163),
+            "Night Cooling": ModbusDatapoint(Address=5163, DataType=ModbusNumberData(units=None)),
             "Night Cooling FreshAir Max": ModbusDatapoint(Address=5164, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=25, step=0.1)),
             "Night Cooling FreshAir Start": ModbusDatapoint(Address=5165, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=25, step=0.1)),
             "Night Cooling RoomTemp Start": ModbusDatapoint(Address=5166, Scaling=0.1, DataType=ModbusNumberData(deviceClass=NumberDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS, min_value=0, max_value=35, step=0.1)),
@@ -153,7 +153,7 @@ class Device(ModbusDevice):
             "Boost Exhaust Speed": ModbusDatapoint(Address=5306, DataType=ModbusNumberData(units=PERCENTAGE, min_value=20, max_value=100, step=1)),
         }
 
-         # CONFIGURATION - Read/Write
+         # UI datapoints that are calculated and not read directly over modbus
         self.Datapoints[self.GROUP_UI] = {
             "Efficiency": ModbusDatapoint(DataType=ModbusSensorData(units=PERCENTAGE)),
         }       
@@ -161,14 +161,15 @@ class Device(ModbusDevice):
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
     async def onAfterRead(self):
-        # Update device info
-        self.model = self.Datapoints[self.GROUP_DEVICE_INFO]["Model Name"].Value
-        self.serial_number = self.Datapoints[self.GROUP_DEVICE_INFO]["Serial Number"].Value
+        if self.firstRead:
+            # Update device info
+            self.model = self.Datapoints[self.GROUP_DEVICE_INFO]["Model Name"].Value
+            self.serial_number = self.Datapoints[self.GROUP_DEVICE_INFO]["Serial Number"].Value
 
-        a = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Maj"].Value
-        b = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Min"].Value
-        c = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Build"].Value
-        self.sw_version = '{}.{}.{}'.format(a,b,c)
+            a = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Maj"].Value
+            b = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Min"].Value
+            c = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Build"].Value
+            self.sw_version = '{}.{}.{}'.format(a,b,c)
 
         # Calculate efficiency
         fresh = self.Datapoints[self.GROUP_SENSORS]["Fresh Air Temp"].Value
@@ -181,7 +182,8 @@ class Device(ModbusDevice):
         except ZeroDivisionError:
             self.Datapoints[self.GROUP_UI]["Efficiency"].Value = 0
 
-        # Set alarms as attributes on Alarm-datapoint
+        # Set alarms as attributes on Alarm-datapoint. This is done so that we don't
+        # need to present all values in the UI
         alarms = self.Datapoints[self.GROUP_ALARMS]
         attrs = {}
         for (dataPointName, data) in alarms.items():

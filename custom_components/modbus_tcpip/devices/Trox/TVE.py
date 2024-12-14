@@ -70,17 +70,17 @@ class Device(ModbusDevice):
     async def onBeforeRead(self):
         # We need to adjust scaling of flow values depending on a configuration value
         if self.firstRead:
-            scaling = 1
+            flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
             match await self.readValue(ModbusDefaultGroups.CONFIG, "201 Volume Flow Unit"):
                 case 0:
-                    scaling = 3.6
+                    flowUnits = "l/s"
                 case 1:
-                    scaling = 1
+                    flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
                 case 6:
-                    scaling = 1.69901
-            self.Datapoints[self.GROUP_0]["Flowrate Actual"].Scaling = scaling
-            self.Datapoints[ModbusDefaultGroups.CONFIG]["120 Q Min"].Scaling = scaling
-            self.Datapoints[ModbusDefaultGroups.CONFIG]["121 Q Max"].Scaling = scaling
+                    flowUnits = UnitOfVolumeFlowRate.CUBIC_FEET_PER_MINUTE
+            self.Datapoints[self.GROUP_0]["Flowrate Actual"].DataType.units = flowUnits
+            self.Datapoints[ModbusDefaultGroups.CONFIG]["120 Q Min"].DataType.units = flowUnits
+            self.Datapoints[ModbusDefaultGroups.CONFIG]["121 Q Max"].DataType.units = flowUnits
 
     async def onAfterRead(self):
         self.sw_version = self.Datapoints[self.GROUP_DEVICE_INFO]["FW"].Value

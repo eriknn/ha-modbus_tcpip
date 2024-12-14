@@ -71,7 +71,6 @@ class ModbusSelectEntity(ModbusBaseEntity, SelectEntity):
         _LOGGER.debug("Select: %s", self._key)
         try:
             if self._key == "Config Selection":
-                _LOGGER.debug("Selecting")
                 await self.coordinator.config_select(option, value)
             else:           
                 _LOGGER.debug("Writing")
