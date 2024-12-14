@@ -17,15 +17,15 @@ class ModbusSensorData(ModbusData):
     units: str = None                   # None | from homeassistant.const import UnitOf....
 
 @dataclass
-class ModbusSelectData(ModbusData):
-    options: dict = field(default_factory=dict)
-
-@dataclass
 class ModbusNumberData(ModbusData):
-    units: str = None
+    units: str = None                   # None | from homeassistant.const import UnitOf....
     min_value: int = 0
     max_value: int = 65535
     step: int = 1
+
+@dataclass
+class ModbusSelectData(ModbusData):
+    options: dict = field(default_factory=dict)
 
 @dataclass
 class ModbusBinarySensorData(ModbusData):
