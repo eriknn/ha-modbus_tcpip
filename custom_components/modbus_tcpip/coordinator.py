@@ -3,7 +3,7 @@ import datetime as dt
 import logging
 
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed, ConfigEntryNotReady, ConfigEntryError
 
 from .devices.helpers import load_device_class
 from .devices.datatypes import ModbusDefaultGroups
@@ -47,12 +47,17 @@ class ModbusCoordinator(DataUpdateCoordinator):
         # Callback to entities
         self._update_callbacks = {}  
 
-    async def initialize(self) -> None:
+    async def _async_setup(self):
         # Load modbus device driver
         device_class = await load_device_class(self.device_model)
         if device_class is not None:
-            self._modbusDevice = device_class(self.ip, self.port, self.slave_id)
-            await self._modbusDevice.readData()
+            try:
+                self._modbusDevice = device_class(self.ip, self.port, self.slave_id)
+                await self._modbusDevice.readData()
+            except Exception as err:
+                raise ConfigEntryNotReady("Could not read data from device!") from err
+        else:
+            raise ConfigEntryError
 
     @property
     def device_id(self):
@@ -94,6 +99,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
                 await self._modbusDevice.readData()
         except Exception as err:
             _LOGGER.debug("Failed when fetching data: %s", str(err))
+            raise UpdateFailed("Could not read data from device!") from err
         
         await self._async_update_deviceInfo()
 

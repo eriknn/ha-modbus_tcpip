@@ -51,9 +51,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Set up coordinator
     coordinator = ModbusCoordinator(hass, dev, device_model, ip, port, slave_id,scan_interval, scan_interval_fast)
-    await coordinator.initialize()
     hass.data[DOMAIN][entry.entry_id] = coordinator
     
+    # Might throw ConfigEntryNotReady, that should cause retry later
+    await coordinator.async_config_entry_first_refresh()
+
     # Forward the setup to the platforms.
     hass.async_create_task(
         hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
