@@ -59,7 +59,7 @@ class ModbusOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             # Update config_entry with new data
             self.hass.config_entries.async_update_entry(
-                self.config_entry, data=user_input, options=self.config_entry.options
+                self.config_entry, title=user_input[CONF_NAME], data=user_input, options=self.config_entry.options
             )
 
             return self.async_create_entry(title="", data={})
