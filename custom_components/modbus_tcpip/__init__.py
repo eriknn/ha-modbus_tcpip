@@ -12,15 +12,21 @@ from homeassistant.const import CONF_DEVICES
 from .const import (
     DOMAIN,
     PLATFORMS,
+    CONF_DEVICE_MODE,
     CONF_NAME,
     CONF_DEVICE_MODEL,
     CONF_IP,
     CONF_PORT,
+    CONF_SERIAL_PORT,
+    CONF_SERIAL_BAUD,
     CONF_SLAVE_ID,
     CONF_SCAN_INTERVAL,
     CONF_SCAN_INTERVAL_FAST
 )
+
+from .const import DeviceMode
 from .coordinator import ModbusCoordinator
+from .devices.connection import TCPConnectionParams, RTUConnectionParams
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,13 +36,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
 
     # Load config data
+    device_mode_value = entry.data.get(CONF_DEVICE_MODE, DeviceMode.TCPIP)
+
+    # Convert legacy integer values to enum members
+    if isinstance(device_mode_value, int):
+        if device_mode_value == 0:
+            device_mode = DeviceMode.TCPIP
+        elif device_mode_value == 1:
+            device_mode = DeviceMode.RTU
+        else:
+            # Handle invalid legacy value, or use default
+            device_mode = DeviceMode.TCPIP
+    else:
+        device_mode = DeviceMode(device_mode_value)
+
+    #device_mode = DeviceMode(entry.data.get(CONF_DEVICE_MODE, DeviceMode.TCPIP))
     name = entry.data[CONF_NAME]
     device_model = entry.data.get(CONF_DEVICE_MODEL, None)
-    ip = entry.data[CONF_IP]
-    port = entry.data[CONF_PORT]
-    slave_id = entry.data[CONF_SLAVE_ID]
     scan_interval = entry.data[CONF_SCAN_INTERVAL]
     scan_interval_fast = entry.data[CONF_SCAN_INTERVAL_FAST]
+
+    if device_mode == DeviceMode.TCPIP:
+        ip = entry.data[CONF_IP]
+        port = entry.data[CONF_PORT]
+        slave_id = entry.data[CONF_SLAVE_ID]
+        connection_params = TCPConnectionParams(ip, port, slave_id)
+    elif device_mode == DeviceMode.RTU:
+        serial_port = entry.data[CONF_SERIAL_PORT]
+        baudrate = entry.data[CONF_SERIAL_BAUD]
+        connection_params = RTUConnectionParams(serial_port, baudrate) 
+    else:
+        _LOGGER.error(f"Unsupported device mode: {device_mode}")
+        return False    
 
     # Create device
     # Each config entry will have only one device, so we use the entry_id as a
@@ -50,10 +81,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     # Set up coordinator
-    coordinator = ModbusCoordinator(hass, dev, device_model, ip, port, slave_id,scan_interval, scan_interval_fast)
+    coordinator = ModbusCoordinator(hass, dev, device_model, connection_params, scan_interval, scan_interval_fast)
     hass.data[DOMAIN][entry.entry_id] = coordinator
     
-    # Might throw ConfigEntryNotReady, that should cause retry later
+    # Might throw ConfigEntryNotReady, which should cause retry later
+    # Or ConfigEntryError, which will cause integration to halt permanently.
     await coordinator.async_config_entry_first_refresh()
 
     # Forward the setup to the platforms.

@@ -10,7 +10,7 @@ from .devices.datatypes import ModbusGroup, ModbusDefaultGroups, ModbusDatapoint
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass, config_entry, async_add_devices):
+async def async_setup_entry(hass, config_entry, async_add_entities):
     """Setup switch from a config entry created in the integrations UI."""
     # Find coordinator for this device
     coordinator:ModbusCoordinator = hass.data[DOMAIN][config_entry.entry_id]
@@ -23,7 +23,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
                 if isinstance(datapoint.DataType, ModbusSwitchData):
                     ha_entities.append(ModbusSwitchEntity(coordinator, group, key, datapoint))
                 
-    async_add_devices(ha_entities, True)
+    async_add_entities(ha_entities, False)
 
 class ModbusSwitchEntity(ModbusBaseEntity, SwitchEntity):
     """Representation of a Switch."""

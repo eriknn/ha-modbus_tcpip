@@ -23,8 +23,8 @@ class Device(ModbusDevice):
     GROUP_UNIT_STATUSES = ModbusGroup(6, ModbusMode.INPUT, ModbusPollMode.POLL_ON)  
     GROUP_UI = ModbusGroup(7, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
 
-    def __init__(self, host:str, port:int, slave_id:int):
-        super().__init__(host, port, slave_id)
+    def __init__(self, connection_params):
+        super().__init__(connection_params)
 
         # Override static device information
         self.manufacturer="Swegon"
@@ -160,17 +160,17 @@ class Device(ModbusDevice):
 
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
-    async def onAfterRead(self):
-        if self.firstRead:
-            # Update device info
-            self.model = self.Datapoints[self.GROUP_DEVICE_INFO]["Model Name"].Value
-            self.serial_number = self.Datapoints[self.GROUP_DEVICE_INFO]["Serial Number"].Value
+    def onAfterFirstRead(self):
+        # Update device info
+        self.model = self.Datapoints[self.GROUP_DEVICE_INFO]["Model Name"].Value
+        self.serial_number = self.Datapoints[self.GROUP_DEVICE_INFO]["Serial Number"].Value
 
-            a = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Maj"].Value
-            b = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Min"].Value
-            c = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Build"].Value
-            self.sw_version = '{}.{}.{}'.format(a,b,c)
+        a = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Maj"].Value
+        b = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Min"].Value
+        c = self.Datapoints[self.GROUP_DEVICE_INFO]["FW Build"].Value
+        self.sw_version = '{}.{}.{}'.format(a,b,c)
 
+    def onAfterRead(self):
         # Calculate efficiency
         fresh = self.Datapoints[self.GROUP_SENSORS]["Fresh Air Temp"].Value
         sup = self.Datapoints[self.GROUP_SENSORS]["Supply Temp before re-heater"].Value

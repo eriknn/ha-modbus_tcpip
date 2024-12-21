@@ -11,7 +11,7 @@ from .devices.datatypes import ModbusDefaultGroups
 _LOGGER = logging.getLogger(__name__)
 
 class ModbusCoordinator(DataUpdateCoordinator):    
-    def __init__(self, hass, device, device_model:str, ip, port, slave_id, scan_interval, scan_interval_fast):
+    def __init__(self, hass, device, device_model:str, connection_params, scan_interval, scan_interval_fast):
         """Initialize coordinator parent"""
         super().__init__(
             hass,
@@ -23,9 +23,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
         )
 
         self.device_model = device_model
-        self.ip = ip
-        self.port = port
-        self.slave_id = slave_id
+        self.connection_params = connection_params
 
         self._fast_poll_enabled = False
         self._fast_poll_count = 0
@@ -35,11 +33,6 @@ class ModbusCoordinator(DataUpdateCoordinator):
         self._device = device
 
         self._modbusDevice = None
-
-        # Initialize states
-        self._measurements = None
-        self._setpoints = None
-        self._timestamp = dt.datetime(2024, 1, 1)
 
         # Storage for config selection
         self.config_selection = 0
@@ -52,8 +45,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
         device_class = await load_device_class(self.device_model)
         if device_class is not None:
             try:
-                self._modbusDevice = device_class(self.ip, self.port, self.slave_id)
-                await self._modbusDevice.readData()
+                self._modbusDevice = device_class(self.connection_params)
             except Exception as err:
                 raise ConfigEntryNotReady("Could not read data from device!") from err
         else:

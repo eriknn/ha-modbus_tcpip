@@ -14,8 +14,8 @@ class Device(ModbusDevice):
     # Define groups
     GROUP_SENSORS = ModbusGroup(0, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
 
-    def __init__(self, host:str, port:int, slave_id:int):
-        super().__init__(host, port, slave_id)
+    def __init__(self, connection_params):
+        super().__init__(connection_params)
 
         # Override static device information
         self.manufacturer="Shandong Renke"

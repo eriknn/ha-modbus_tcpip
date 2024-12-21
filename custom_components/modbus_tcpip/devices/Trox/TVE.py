@@ -18,8 +18,8 @@ class Device(ModbusDevice):
     GROUP_DEVICE_INFO = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
     GROUP_UI = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF)
 
-    def __init__(self, host:str, port:int, slave_id:int):
-        super().__init__(host, port, slave_id)
+    def __init__(self, connection_params):
+        super().__init__(connection_params)
 
         # Override static device information
         self.manufacturer="Trox"
@@ -67,22 +67,21 @@ class Device(ModbusDevice):
 
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
 
-    async def onBeforeRead(self):
+    def onAfterFirstRead(self):
         # We need to adjust scaling of flow values depending on a configuration value
-        if self.firstRead:
-            flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
-            match await self.readValue(ModbusDefaultGroups.CONFIG, "201 Volume Flow Unit"):
-                case 0:
-                    flowUnits = "l/s"
-                case 1:
-                    flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
-                case 6:
-                    flowUnits = UnitOfVolumeFlowRate.CUBIC_FEET_PER_MINUTE
-            self.Datapoints[self.GROUP_0]["Flowrate Actual"].DataType.units = flowUnits
-            self.Datapoints[ModbusDefaultGroups.CONFIG]["120 Q Min"].DataType.units = flowUnits
-            self.Datapoints[ModbusDefaultGroups.CONFIG]["121 Q Max"].DataType.units = flowUnits
+        flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
+        match self.Datapoints[ModbusDefaultGroups.CONFIG]["201 Volume Flow Unit"].Value:
+            case 0:
+                flowUnits = "l/s"
+            case 1:
+                flowUnits = UnitOfVolumeFlowRate.CUBIC_METERS_PER_HOUR
+            case 6:
+                flowUnits = UnitOfVolumeFlowRate.CUBIC_FEET_PER_MINUTE
+        self.Datapoints[self.GROUP_0]["Flowrate Actual"].DataType.units = flowUnits
+        self.Datapoints[ModbusDefaultGroups.CONFIG]["120 Q Min"].DataType.units = flowUnits
+        self.Datapoints[ModbusDefaultGroups.CONFIG]["121 Q Max"].DataType.units = flowUnits
 
-    async def onAfterRead(self):
+    def onAfterRead(self):
         self.sw_version = self.Datapoints[self.GROUP_DEVICE_INFO]["FW"].Value
 
         # Handle alarms
