@@ -2,7 +2,7 @@
 
 ## Installation
 
-Download using HACS or manually put it in the custom_components folder.
+Download using HACS (add repository manually) or manually download and put it in the custom_components folder.
 
 ## Purpose of integration
 
