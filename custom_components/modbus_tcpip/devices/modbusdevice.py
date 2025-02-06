@@ -24,9 +24,9 @@ class InitHelper(type):
 class ModbusDevice(metaclass=InitHelper):
     def __init__(self, connection_params: ConnectionParams):
         if isinstance(connection_params, TCPConnectionParams):
-            self._client = ModbusTcpClient(connection_params.ip, connection_params.port)
+            self._client = ModbusTcpClient(host=connection_params.ip, port=connection_params.port)
         elif isinstance(connection_params, RTUConnectionParams):
-            self._client = ModbusSerialClient(connection_params.serial_port, baudrate=connection_params.baud_rate)
+            self._client = ModbusSerialClient(port=connection_params.serial_port, baudrate=connection_params.baud_rate)
         else:
             raise ValueError("Unsupported connection parameters")
         
