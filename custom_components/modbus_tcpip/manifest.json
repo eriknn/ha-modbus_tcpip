@@ -8,5 +8,5 @@
 	"issue_tracker": "https://github.com/eriknn/modbus_tcpip/issues",
 	"loggers": ["custom_components.modbus_tcpip"],
 	"requirements": ["pymodbus==3.6.9"],
-	"version": "1.0.0"
+	"version": "1.0.4"
 }
