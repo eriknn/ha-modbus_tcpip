@@ -23,8 +23,8 @@ class Device(ModbusDevice):
 
         # SENSORS - Read-only
         self.Datapoints[self.GROUP_SENSORS] = {
-            "Temperature": ModbusDatapoint(Address=0, Scaling=0.1, DataType=ModbusSensorData(deviceClass=SensorDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS)),
-            "Humidity": ModbusDatapoint(Address=1, Scaling=0.1, DataType=ModbusSensorData(deviceClass=SensorDeviceClass.HUMIDITY, units=PERCENTAGE)),
+            "Humidity": ModbusDatapoint(Address=0, Scaling=0.1, DataType=ModbusSensorData(deviceClass=SensorDeviceClass.HUMIDITY, units=PERCENTAGE)),
+            "Temperature": ModbusDatapoint(Address=1, Scaling=0.1, DataType=ModbusSensorData(deviceClass=SensorDeviceClass.TEMPERATURE, units=UnitOfTemperature.CELSIUS)),
         }
 
         _LOGGER.debug("Loaded datapoints for %s %s", self.manufacturer, self.model)
