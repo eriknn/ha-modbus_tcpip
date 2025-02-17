@@ -13,17 +13,17 @@ from homeassistant.components.number import NumberDeviceClass
 _LOGGER = logging.getLogger(__name__)
 
 class Device(ModbusDevice):
-    # Define groups
-    GROUP_0 = ModbusGroup(0, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
-    GROUP_DEVICE_INFO = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
-    GROUP_UI = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF)
-
     def __init__(self, connection_params):
         super().__init__(connection_params)
 
         # Override static device information
         self.manufacturer="Trox"
         self.model="TVE"
+
+        # Define groups
+        self.GROUP_0 = ModbusGroup(0, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
+        self.GROUP_DEVICE_INFO = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
+        self.GROUP_UI = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF)
 
         # GROUP 0
         self.Datapoints[self.GROUP_0] = {
