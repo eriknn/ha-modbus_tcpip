@@ -11,15 +11,15 @@ from homeassistant.components.sensor import SensorDeviceClass
 _LOGGER = logging.getLogger(__name__)
 
 class Device(ModbusDevice):
+    # Define groups
+    GROUP_SENSORS = ModbusGroup(0, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
+
     def __init__(self, connection_params):
         super().__init__(connection_params)
 
         # Override static device information
         self.manufacturer="Shandong Renke"
         self.model="RS-WS-N01-8"
-
-        # Define groups
-        self.GROUP_SENSORS = ModbusGroup(0, ModbusMode.INPUT, ModbusPollMode.POLL_ON)    
 
         # SENSORS - Read-only
         self.Datapoints[self.GROUP_SENSORS] = {

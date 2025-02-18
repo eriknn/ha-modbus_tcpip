@@ -5,7 +5,7 @@ from typing import Dict
 
 from homeassistant.helpers.entity import EntityCategory
 
-from pymodbus.client import ModbusTcpClient, ModbusSerialClient
+from pymodbus.client import AsyncModbusTcpClient, AsyncModbusSerialClient
 from pymodbus.exceptions import ModbusException
 
 from .connection import ConnectionParams, TCPConnectionParams, RTUConnectionParams
@@ -24,12 +24,12 @@ class InitHelper(type):
 class ModbusDevice(metaclass=InitHelper):
     def __init__(self, connection_params: ConnectionParams):
         if isinstance(connection_params, TCPConnectionParams):
-            self._client = ModbusTcpClient(host=connection_params.ip, port=connection_params.port)
+            self._client = AsyncModbusTcpClient(host=connection_params.ip, port=connection_params.port)
         elif isinstance(connection_params, RTUConnectionParams):
-            self._client = ModbusSerialClient(port=connection_params.serial_port, baudrate=connection_params.baud_rate)
+            self._client = AsyncModbusSerialClient(port=connection_params.serial_port, baudrate=connection_params.baud_rate)
         else:
             raise ValueError("Unsupported connection parameters")
-        
+
         self._slave_id = connection_params.slave_id
         
         # Default properties
@@ -69,6 +69,8 @@ class ModbusDevice(metaclass=InitHelper):
     """ *********** EXTERNAL CALL TO READ ALL DATA ************ """
     """ ******************************************************* """
     async def readData(self):
+        await self._client.connect() 
+
         self.onBeforeRead()
 
         try:
@@ -76,13 +78,14 @@ class ModbusDevice(metaclass=InitHelper):
                 if group.poll_mode == ModbusPollMode.POLL_ON:
                     await self.readGroup(group)
                 elif group.poll_mode == ModbusPollMode.POLL_ONCE and self.firstRead:
-                    await self.readGroup(group)   
+                    await self.readGroup(group)
         except Exception as err:
             raise
 
         if self.firstRead:      
             self.onAfterFirstRead()
-            self.firstRead = False       
+            self.firstRead = False
+
         self.onAfterRead()
 
     """ ******************************************************* """
@@ -103,9 +106,9 @@ class ModbusDevice(metaclass=InitHelper):
         # Read the appropriate type of registers
         try:
             if group.mode == ModbusMode.INPUT:
-                response = self._client.read_input_registers(address=first_address, count=n_reg, slave=self._slave_id)
+                response = await self._client.read_input_registers(address=first_address, count=n_reg, slave=self._slave_id)
             elif group.mode == ModbusMode.HOLDING:
-                response = self._client.read_holding_registers(address=first_address, count=n_reg, slave=self._slave_id)
+                response = await self._client.read_holding_registers(address=first_address, count=n_reg, slave=self._slave_id)
             else:
                 raise ValueError(f"Unsupported Modbus mode: {group.mode}")
         except Exception as err:
@@ -139,9 +142,9 @@ class ModbusDevice(metaclass=InitHelper):
 
         try:
             if group.mode == ModbusMode.INPUT:
-                response = self._client.read_input_registers(address=datapoint.Address, count=length, slave=self._slave_id)
+                response = await self._client.read_input_registers(address=datapoint.Address, count=length, slave=self._slave_id)
             elif group.mode == ModbusMode.HOLDING:
-                response = self._client.read_holding_registers(address=datapoint.Address, count=length, slave=self._slave_id)
+                response = await self._client.read_holding_registers(address=datapoint.Address, count=length, slave=self._slave_id)
             else:
                 raise ValueError(f"Unsupported Modbus mode: {group.mode}")
         except Exception as err:
@@ -185,9 +188,9 @@ class ModbusDevice(metaclass=InitHelper):
         # Write the registers
         try:
             if length == 1:
-                response = self._client.write_register(address=datapoint.Address, value=registers[0], slave=self._slave_id)
+                response = await self._client.write_register(address=datapoint.Address, value=registers[0], slave=self._slave_id)
             else:
-                response = self._client.write_registers(address=datapoint.Address, values=registers, slave=self._slave_id)
+                response = await self._client.write_registers(address=datapoint.Address, values=registers, slave=self._slave_id)
         except Exception as err:
             raise
 
