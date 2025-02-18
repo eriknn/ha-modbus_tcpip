@@ -69,7 +69,8 @@ class ModbusDevice(metaclass=InitHelper):
     """ *********** EXTERNAL CALL TO READ ALL DATA ************ """
     """ ******************************************************* """
     async def readData(self):
-        await self._client.connect() 
+        if self.firstRead:      
+            await self._client.connect() 
 
         self.onBeforeRead()
 
