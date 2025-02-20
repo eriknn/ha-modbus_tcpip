@@ -14,14 +14,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class Device(ModbusDevice):
     # Define groups
-    GROUP_COMMANDS = ModbusGroup(0, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
-    GROUP_COMMANDS2 = ModbusGroup(1, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
-    GROUP_SETPOINTS = ModbusGroup(2, ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
-    GROUP_DEVICE_INFO = ModbusGroup(3, ModbusMode.INPUT, ModbusPollMode.POLL_ONCE)
-    GROUP_ALARMS = ModbusGroup(4, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
-    GROUP_SENSORS = ModbusGroup(5, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
-    GROUP_UNIT_STATUSES = ModbusGroup(6, ModbusMode.INPUT, ModbusPollMode.POLL_ON)  
-    GROUP_UI = ModbusGroup(7, ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
+    GROUP_COMMANDS = ModbusGroup(ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
+    GROUP_COMMANDS2 = ModbusGroup(ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
+    GROUP_SETPOINTS = ModbusGroup(ModbusMode.HOLDING, ModbusPollMode.POLL_ON)
+    GROUP_DEVICE_INFO = ModbusGroup(ModbusMode.INPUT, ModbusPollMode.POLL_ONCE)
+    GROUP_ALARMS = ModbusGroup(ModbusMode.INPUT, ModbusPollMode.POLL_ON)
+    GROUP_SENSORS = ModbusGroup(ModbusMode.INPUT, ModbusPollMode.POLL_ON)
+    GROUP_UNIT_STATUSES = ModbusGroup(ModbusMode.INPUT, ModbusPollMode.POLL_ON)  
+    GROUP_UI = ModbusGroup(ModbusMode.HOLDING, ModbusPollMode.POLL_OFF) 
 
     def __init__(self, connection_params):
         super().__init__(connection_params)

@@ -1,6 +1,7 @@
 import async_timeout
 import datetime as dt
 import logging
+import traceback
 
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed, ConfigEntryNotReady, ConfigEntryError
@@ -90,7 +91,7 @@ class ModbusCoordinator(DataUpdateCoordinator):
             async with async_timeout.timeout(20):
                 await self._modbusDevice.readData()
         except Exception as err:
-            _LOGGER.debug("Failed when fetching data: %s", str(err))
+            _LOGGER.debug("Failed when fetching data: %s", traceback.format_exc())
             raise UpdateFailed("Could not read data from device!") from err
         
         await self._async_update_deviceInfo()

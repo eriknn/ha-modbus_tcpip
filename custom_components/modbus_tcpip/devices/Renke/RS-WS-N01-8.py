@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class Device(ModbusDevice):
     # Define groups
-    GROUP_SENSORS = ModbusGroup(0, ModbusMode.INPUT, ModbusPollMode.POLL_ON)
+    GROUP_SENSORS = ModbusGroup(ModbusMode.INPUT, ModbusPollMode.POLL_ON)
 
     def __init__(self, connection_params):
         super().__init__(connection_params)
